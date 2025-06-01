@@ -1,26 +1,50 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Clock, Calendar, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import { formatDate, formatTime } from '../../lib/utils';
 import toast from 'react-hot-toast';
 
 const CustomerDashboardPage: React.FC = () => {
   const { user } = useAuth();
-  const [isCheckedIn, setIsCheckedIn] = React.useState(false);
-  const [checkInTime, setCheckInTime] = React.useState<Date | null>(null);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [checkInTime, setCheckInTime] = useState<Date | null>(null);
+  const [recentActivity, setRecentActivity] = useState<Array<{
+    type: 'check-in' | 'check-out';
+    timestamp: Date;
+  }>>([]);
 
   const handleCheckIn = () => {
+    const now = new Date();
     setIsCheckedIn(true);
-    setCheckInTime(new Date());
+    setCheckInTime(now);
+    setRecentActivity(prev => [{
+      type: 'check-in',
+      timestamp: now
+    }, ...prev]);
     toast.success('Successfully checked in!');
   };
 
   const handleCheckOut = () => {
+    const now = new Date();
     setIsCheckedIn(false);
     setCheckInTime(null);
+    setRecentActivity(prev => [{
+      type: 'check-out',
+      timestamp: now
+    }, ...prev]);
     toast.success('Successfully checked out!');
+  };
+
+  const formatDateTime = (date: Date) => {
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   return (
@@ -57,7 +81,13 @@ const CustomerDashboardPage: React.FC = () => {
                 {checkInTime && (
                   <div className="text-right">
                     <p className="text-sm text-gray-500">Check-in Time</p>
-                    <p className="text-lg font-semibold">{formatTime(checkInTime)}</p>
+                    <p className="text-lg font-semibold">
+                      {checkInTime.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                      })}
+                    </p>
                   </div>
                 )}
               </div>
@@ -97,7 +127,7 @@ const CustomerDashboardPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Valid Until</p>
-                <p className="text-lg font-semibold">{formatDate(new Date(2024, 5, 30))}</p>
+                <p className="text-lg font-semibold">June 30, 2025</p>
               </div>
               <div className="pt-2">
                 <div className="h-2 bg-gray-200 rounded-full">
@@ -116,27 +146,24 @@ const CustomerDashboardPage: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[
-              { date: '2024-03-15', checkIn: '09:00 AM', checkOut: '10:30 AM' },
-              { date: '2024-03-14', checkIn: '08:30 AM', checkOut: '10:00 AM' },
-              { date: '2024-03-13', checkIn: '09:15 AM', checkOut: '11:00 AM' },
-            ].map((activity, index) => (
+            {recentActivity.map((activity, index) => (
               <div key={index} className="flex items-center justify-between py-2 border-b border-gray-200 last:border-0">
                 <div className="flex items-center">
                   <Clock className="w-5 h-5 text-gray-400 mr-3" />
                   <div>
-                    <p className="font-medium">{activity.date}</p>
+                    <p className="font-medium">
+                      {activity.type === 'check-in' ? 'Checked In' : 'Checked Out'}
+                    </p>
                     <p className="text-sm text-gray-500">
-                      {activity.checkIn} - {activity.checkOut}
+                      {formatDateTime(activity.timestamp)}
                     </p>
                   </div>
                 </div>
-                <span className="text-sm text-gray-500">
-                  {Math.round((new Date(`2024-03-15 ${activity.checkOut}`).getTime() - 
-                    new Date(`2024-03-15 ${activity.checkIn}`).getTime()) / (1000 * 60))} mins
-                </span>
               </div>
             ))}
+            {recentActivity.length === 0 && (
+              <p className="text-center text-gray-500 py-4">No recent activity</p>
+            )}
           </div>
         </CardContent>
       </Card>
