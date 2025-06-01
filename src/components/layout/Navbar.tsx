@@ -216,7 +216,7 @@ const Navbar: React.FC = () => {
         ];
       case 'customer':
         return [
-          { path: '/customer/dashboard', label: 'Dashboard' },
+          { path: '/customer', label: 'Dashboard' },
           { path: '/customer/profile', label: 'Profile' },
           { path: '/customer/attendance', label: 'Attendance' },
         ];
